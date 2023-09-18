@@ -1,7 +1,9 @@
+import { ShougiBoard } from "@/components/shougiBoard";
+
 export default function Home() {
   return (
     <div>
-      <h1>Hello</h1>
+      <ShougiBoard isGodMode={false}/>
     </div>
   )
 } 
