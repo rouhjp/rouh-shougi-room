@@ -16,8 +16,8 @@ export const ShougiBoard = function ShougiBoard({
   const [movePoint, setMovePoint] = useState<Point | null>(null);
   const [putPiece, setPutPiece] = useState<{ side: Side, type: PieceType } | null>(null);
   const [promotePiece, setPromotePiece] = useState<{ side: Side, type: PieceType, to: Point } | null>();
-  const moveSelectablePoints: Point[] = movePoint? getSelectableMovePoints(movePoint, board.squares, currentSide):[];
-  const putSelectablePoints: Point[] = putPiece? getSelectablePutPoints(putPiece.type, board.squares, currentSide):[];
+  const moveSelectablePoints: Point[] = movePoint ? getSelectableMovePoints(movePoint, board.squares, currentSide) : [];
+  const putSelectablePoints: Point[] = putPiece ? getSelectablePutPoints(putPiece.type, board.squares, currentSide) : [];
   const isMoveMode = !!movePoint;
   const isPutMode = !!putPiece;
 
@@ -46,7 +46,7 @@ export const ShougiBoard = function ShougiBoard({
         (isEnemyTeritory(fromSquare.side, from) || isEnemyTeritory(fromSquare.side, to));
       if (promotable) {
         //モーダルを表示して成/不成を選択
-        setPromotePiece({side: fromSquare.side, type: fromSquare.piece.type, to});
+        setPromotePiece({ side: fromSquare.side, type: fromSquare.piece.type, to });
       } else {
         doMove(from, to, fromSquare.piece.promoted);
       }
@@ -65,7 +65,7 @@ export const ShougiBoard = function ShougiBoard({
           newHands[side] = [...board.hands[side], toSquare.piece.type];
           //駒移動
           const newSquares = board.squares.map(row => row.slice());
-          newSquares[to.y][to.x] = { ...fromSquare, piece: {...fromSquare.piece, promoted:promote}};
+          newSquares[to.y][to.x] = { ...fromSquare, piece: { ...fromSquare.piece, promoted: promote } };
           newSquares[from.y][from.x] = null;
           setBoard({ hands: newHands, squares: newSquares });
         }
@@ -73,7 +73,7 @@ export const ShougiBoard = function ShougiBoard({
       } else {
         //駒移動
         const newSquares = board.squares.map(row => row.slice());
-        newSquares[to.y][to.x] = { ...fromSquare, piece: {...fromSquare.piece, promoted:promote}};
+        newSquares[to.y][to.x] = { ...fromSquare, piece: { ...fromSquare.piece, promoted: promote } };
         newSquares[from.y][from.x] = null;
         setBoard(prev => ({ ...prev, squares: newSquares }));
         setMovePoint(null);
@@ -132,24 +132,33 @@ export const ShougiBoard = function ShougiBoard({
                   {Array.from(Array(9).keys()).map((x) => {
                     const square = board.squares[y][x];
                     const isSelected = movePoint && movePoint.y === y && movePoint.x === x;
-                    const isMoveSeletable = moveSelectablePoints.some(p=>p.x===x && p.y===y);
-                    const isPutSelectable = putSelectablePoints.some(p=>p.x===x && p.y===y);
+                    const isMoveSeletable = moveSelectablePoints.some(p => p.x === x && p.y === y);
+                    const isPutSelectable = putSelectablePoints.some(p => p.x === x && p.y === y);
                     return (
                       <td key={x}
                         className={[
                           "w-10 h-10 border border-black",
                           isSelected ? "bg-[#f08080]" : "",
-                          isMoveSeletable? "bg-[#f0e4a8]":"",
-                          isPutSelectable? "bg-[#f0e4a8]":"",
+                          isMoveSeletable ? "bg-[#f0e4a8]" : "",
+                          isPutSelectable ? "bg-[#f0e4a8]" : "",
                         ].join(" ")}
                         onClick={() => {
                           const isEmpty = !square;
                           if (isMoveMode) {
-                            if (isMoveSeletable){
-                              move(movePoint, { x, y });
-                            } else {
+                            if (isSelected) {
                               // cancel move mode
                               setMovePoint(null);
+                            } else if (isMoveSeletable) {
+                              move(movePoint, { x, y });
+                            } else {
+                              if (!isEmpty && (isGodMode || square.side === currentSide)) {
+                                // to move mode
+                                setPutPiece(null);
+                                setMovePoint({ x, y });
+                              } else {
+                                // cancel move mode
+                                setMovePoint(null);
+                              }
                             }
                           } else {
                             if (isPutMode && isEmpty && isPutSelectable) {
