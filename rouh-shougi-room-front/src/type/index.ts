@@ -312,3 +312,37 @@ export const getSelectablePutPoints = (type: PieceType, squares: Squares, curren
   }
   return points;
 }
+
+export const reversed = (squares: Squares): Squares => {
+  const reversed = [];
+  for (let i = 8; i >= 0; i--) {
+    const row = [];
+    for (let j = 8; j >= 0; j--) {
+      row.push(squares[i][j]);
+    }
+    reversed.push(row);
+  }
+  return reversed;
+}
+
+export const reverseBoardIfWhite = (squares: Squares, side: Side): Squares => {
+  switch(side){
+    case "black": return squares;
+    case "white": return reversed(squares);
+  }
+}
+
+export const reversePointIfWhite = (point: Point, side: Side): Point => {
+  switch(side){
+    case "black": return point;
+    case "white": return {x: 8 - point.x, y: 8 - point.y};
+  }
+}
+
+export type Move = {
+  side: Side,
+  from?: Point,
+  to: Point,
+  piece: Piece,
+}
+

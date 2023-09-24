@@ -1,4 +1,4 @@
-import { Side, Board, DEFAULT_BOARD, oppositeOf, PieceType, isPromotable, Point, getSelectableMovePoints, getSelectablePutPoints, reversed, reverseBoardIfWhite } from "@/type"
+import { Side, Board, DEFAULT_BOARD, oppositeOf, PieceType, isPromotable, Point, getSelectableMovePoints, getSelectablePutPoints, reversed, reverseBoardIfWhite, Move, reversePointIfWhite } from "@/type"
 import { useState } from "react";
 import { ShougiImage } from "./shougiImage";
 import { ShougiHand } from "./shougiHand";
@@ -6,18 +6,26 @@ import { ShougiHand } from "./shougiHand";
 interface Props {
   side?: Side,
   isGodMode?: boolean,
+  board: Board,
+  onMove: (move: Move) => void,
+  onReset: () => void,
+  lastMovePoint?: Point,
 }
 
-export const ShougiBoard = function ShougiBoard({
+export const ShougiNetBoard = function ShougiNetBoard({
   side: defaultSide = "white",
   isGodMode = false,
+  board,
+  onMove,
+  onReset,
+  lastMovePoint,
 }: Props) {
   const [currentSide, setCurrentSide] = useState<Side>(defaultSide);
-  const [board, setBoard] = useState<Board>(DEFAULT_BOARD);
   const [movePoint, setMovePoint] = useState<Point | null>(null);
   const [putPiece, setPutPiece] = useState<{ side: Side, type: PieceType } | null>(null);
   const [promotePiece, setPromotePiece] = useState<{ side: Side, type: PieceType, to: Point } | null>();
   const squaresView = reverseBoardIfWhite(board.squares, currentSide);
+  const lastMovePointView = lastMovePoint? reversePointIfWhite(lastMovePoint, currentSide): undefined;
   const moveSelectablePoints: Point[] = movePoint ? getSelectableMovePoints(movePoint, squaresView, currentSide) : [];
   const putSelectablePoints: Point[] = putPiece ? getSelectablePutPoints(putPiece.type, squaresView, currentSide) : [];
 
@@ -28,13 +36,15 @@ export const ShougiBoard = function ShougiBoard({
   const put = (side: Side, type: PieceType, to: Point) => {
     const toSquare = squaresView[to.y][to.x];
     if (!toSquare) {
-      const newHands = { ...board.hands }
-      const index = board.hands[side].indexOf(type);
-      newHands[side] = board.hands[side].filter((_, i) => i !== index);
-      //駒打ち
-      const newSquares = squaresView.map(row => row.slice());
-      newSquares[to.y][to.x] = { piece: { type, promoted: false }, side }
-      setBoard({ hands: newHands, squares: reverseBoardIfWhite(newSquares, currentSide) });
+      onMove({
+        side: currentSide,
+        from: undefined,
+        to: reversePointIfWhite(to, side),
+        piece: {
+          type: type,
+          promoted: false,
+        },
+      })
     }
     setPutPiece(null);
   }
@@ -55,29 +65,17 @@ export const ShougiBoard = function ShougiBoard({
 
   const doMove = (from: Point, to: Point, promote: boolean) => {
     const fromSquare = squaresView[from.y][from.x];
-    const toSquare = squaresView[to.y][to.x];
     if (fromSquare) {
-      if (toSquare) {
-        if (toSquare.side !== fromSquare.side) {
-          //駒取り
-          const side = fromSquare.side;
-          const newHands = { ...board.hands }
-          newHands[side] = [...board.hands[side], toSquare.piece.type];
-          //駒移動
-          const newSquares = squaresView.map(row => row.slice());
-          newSquares[to.y][to.x] = { ...fromSquare, piece: { ...fromSquare.piece, promoted: promote } };
-          newSquares[from.y][from.x] = null;
-          setBoard({ hands: newHands, squares: reverseBoardIfWhite(newSquares, currentSide) });
+      onMove({
+        side: currentSide,
+        from: reversePointIfWhite(from, fromSquare.side),
+        to: reversePointIfWhite(to, fromSquare.side),
+        piece: {
+          type: fromSquare.piece.type,
+          promoted: promote,
         }
-        setMovePoint(null);
-      } else {
-        //駒移動
-        const newSquares = squaresView.map(row => row.slice());
-        newSquares[to.y][to.x] = { ...fromSquare, piece: { ...fromSquare.piece, promoted: promote } };
-        newSquares[from.y][from.x] = null;
-        setBoard(prev => ({ ...prev, squares: reverseBoardIfWhite(newSquares, currentSide) }));
-        setMovePoint(null);
-      }
+      })
+      setMovePoint(null);
     }
   }
 
@@ -134,10 +132,12 @@ export const ShougiBoard = function ShougiBoard({
                     const isSelected = movePoint && movePoint.y === y && movePoint.x === x;
                     const isMoveSeletable = moveSelectablePoints.some(p => p.x === x && p.y === y);
                     const isPutSelectable = putSelectablePoints.some(p => p.x === x && p.y === y);
+                    const isLastMoved = lastMovePointView && lastMovePointView.y === y && lastMovePointView.x === x;
                     return (
                       <td key={x}
                         className={[
                           "w-10 h-10 border border-black",
+                          isLastMoved? "bg-[#f08080]": "",
                           isSelected ? "bg-[#f08080]" : "",
                           isMoveSeletable ? "bg-[#f0e4a8]" : "",
                           isPutSelectable ? "bg-[#f0e4a8]" : "",
@@ -203,9 +203,7 @@ export const ShougiBoard = function ShougiBoard({
         />
         <input type="button"
           value="盤面リセット"
-          onClick={()=>{
-            setBoard(DEFAULT_BOARD);
-          }}
+          onClick={onReset}
           className="hover:cursor-pointer bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-1 px-2 border border-blue-500 hover:border-transparent rounded"
         />
       </div>

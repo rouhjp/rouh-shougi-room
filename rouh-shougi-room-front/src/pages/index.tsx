@@ -1,9 +1,25 @@
-import { ShougiBoard } from "@/components/shougiBoard";
+import { ShougiNet } from "@/components/shougiNet";
 
-export default function Home() {
+interface Props {
+  websocketUrl: string,
+}
+
+export default function Home({ websocketUrl }: Props) {
   return (
     <div>
-      <ShougiBoard isGodMode={false}/>
+      <ShougiNet websocketUrl={websocketUrl}/>
     </div>
   )
 } 
+
+export async function getServerSideProps() {
+  const websocketUrl = process.env.WEBSOCKET_URL || "";
+  console.log(`url: ${websocketUrl}`);
+  return {
+    props: {
+      websocketUrl
+    }
+  };
+}
+
+
