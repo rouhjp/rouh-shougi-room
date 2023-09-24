@@ -1,4 +1,4 @@
-import { Side, Board, DEFAULT_BOARD, oppositeOf, PieceType, isPromotable, Point, getSelectableMovePoints, getSelectablePutPoints, reversed, reverseBoardIfWhite, Move, reversePointIfWhite } from "@/type"
+import { Side, Board, oppositeOf, PieceType, isPromotable, Point, getSelectableMovePoints, getSelectablePutPoints, reverseBoardIfWhite, Move, reversePointIfWhite } from "@/type"
 import { useState } from "react";
 import { ShougiImage } from "./shougiImage";
 import { ShougiHand } from "./shougiHand";

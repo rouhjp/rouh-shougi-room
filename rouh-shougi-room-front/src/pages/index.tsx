@@ -6,7 +6,7 @@ interface Props {
 
 export default function Home({ websocketUrl }: Props) {
   return (
-    <div>
+    <div className="w-fit mx-auto">
       <ShougiNet websocketUrl={websocketUrl}/>
     </div>
   )

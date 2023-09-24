@@ -17,20 +17,27 @@ export const ShougiNet = function ShougiNet({
     connection.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if(data && data.action){
-        if(data.action==="message"){
-          console.log(data.action.message);
-        }else if(data.action==="move"){
+        if(data.action==="move"){
           onMove(data.move);
         }else if(data.action==="reset"){
           onReset();
         }else if(data.action==="sync"){
           const board = data.board;
           setBoard(board);
+        }else if(data.action==="arrived"){
+          sendBoard(board);
         }
       }
     };
     connection.onopen = () => {
-      sendReset();
+      connection.send(
+        JSON.stringify({
+          action: "sendmessage",
+          message: JSON.stringify({
+            action: "arrived",
+          })
+        })
+      );
     }
   }
 
@@ -47,17 +54,17 @@ export const ShougiNet = function ShougiNet({
     }
   }
 
-  // const sendBoard = (board: Board) => {
-  //   if(connection && connection.readyState){
-  //     connection.send(JSON.stringify({
-  //       action: "sendmessage",
-  //       message: JSON.stringify({
-  //         action: "sync",
-  //         board: board,
-  //       })
-  //     }))
-  //   }
-  // }
+  const sendBoard = (board: Board) => {
+    if(connection && connection.readyState){
+      connection.send(JSON.stringify({
+        action: "sendmessage",
+        message: JSON.stringify({
+          action: "sync",
+          board: board,
+        })
+      }))
+    }
+  }
 
   const sendMove = (move: Move)=> {
     if(connection){
@@ -97,9 +104,6 @@ export const ShougiNet = function ShougiNet({
             newSquares[move.from.y][move.from.x] = null;
             setBoard({ hands: newHands, squares: newSquares });
             setLastMovePoint(move.to);
-            // if(sync){
-            //   sendBoard({ hands: newHands, squares: newSquares });
-            // }
           }
         } else {
           //駒移動
@@ -108,9 +112,6 @@ export const ShougiNet = function ShougiNet({
           newSquares[move.from.y][move.from.x] = null;
           setBoard({ ...board, squares: newSquares });
           setLastMovePoint(move.to);
-          // if(sync){
-          //   sendBoard({ ...board, squares: newSquares });
-          // }
         }
       }
     } else {
@@ -124,9 +125,6 @@ export const ShougiNet = function ShougiNet({
         newSquares[move.to.y][move.to.x] = { piece: move.piece, side: move.side }
         setBoard({ hands: newHands, squares: newSquares });
         setLastMovePoint(move.to);
-        // if(sync){
-        //   sendBoard({ hands: newHands, squares: newSquares });
-        // }
       }
     }
 
@@ -146,8 +144,10 @@ export const ShougiNet = function ShougiNet({
           onMove(move);
         }}
         onReset={()=>{
-          sendReset();
-          onReset();
+          if(window.confirm("盤面をリセットしてよろしいですか？")){
+            sendReset();
+            onReset(); 
+          }
         }}
         lastMovePoint={lastMovePoint}/>
     </div>
